@@ -7,6 +7,7 @@ import json
 import pprint
 import apiai
 from pymessenger.bot import Bot
+from dateutil import parser 
 
 from .models import User, ScheduleItem
 
@@ -90,7 +91,18 @@ class AITasks(generic.View):
         intent = ai_req['result']['action']
         if intent == "get_schedule_for_day":
             date = ai_req['result']['parameters']['date']
-            ret['speech'] = "Getting your schedule for " + date
+            schedule = ScheduleItem.objects.all()
+            if schedule:
+                ret['speech'] = "Your schedule is: "
+                for item in schedule:
+                    ret['speech'] += item.name
+                    ret['speech'] += " at "
+                    ret['speech'] += item.date.strftime("%B %d, %Y at %I:%M%P") 
+                    ret['speech'] += ", "
+            else:
+                ret['speech'] = "your schedule is empty on " + date
+
+            pp.pprint(schedule)
         if intent == "get_schedule_for_duration":
             date = ai_req['result']['parameters']['date-period']
             ret['speech'] = "Getting your schedule for " + date
@@ -98,6 +110,7 @@ class AITasks(generic.View):
             eventDate = ai_req['result']['parameters']['date-time']
             print(eventDate)
             event = ai_req['result']['parameters']['event']
+            print(event)
             item = ScheduleItem(user=user, date=eventDate, name=event)
             item.save()
             ret['speech'] = "Added " + event + " at " + eventDate
